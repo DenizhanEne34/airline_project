@@ -7,7 +7,11 @@
 <body>
     <h1>Welcome to the Airline Reservation System. You can search for flights directly from here</h1>
     <a href="{{ url_for('login') }}">Login</a> |
-    <a href="{{ url_for('register') }}">Register</a>
+    <a href="{{ url_for('registerCustomer') }}">Register as a Customer</a> |
+    <a href="{{ url_for('registerAirlineStaff') }}">Register as an Airline Staff</a> |
+    <a href="{{ url_for('checkStatus') }}">Check Status of a Flight</a> |
+
+    
 
     <!-- Search Form for One-way or Return flights -->
     <form action="/" method="get">
@@ -37,6 +41,7 @@
                 <th>Departure Date and Time</th>
                 <th>Arrival Date and Time</th>
                 <th>Base Price</th>
+                <th>Calculated Price</th>
                 <th>Departure Airport</th>
                 <th>Arrival Airport</th>
             </tr>
@@ -49,6 +54,7 @@
                     <td>{{ flight['departure_date_time'] }}</td>
                     <td>{{ flight['arrival_date_time'] }}</td>
                     <td>{{ flight['base_price'] }}</td>
+                    <td>{{ flight['calculated_price'] }}</td>
                     <td>{{ flight['departure_airport'] }}</td>
                     <td>{{ flight['arrival_airport'] }}</td>
                 </tr>
@@ -68,12 +74,14 @@
                 <th>Departure Flight Number</th>
                 <th>Departure Date and Time</th>
                 <th>Arrival Date and Time</th>
-                <th>Base Price</th>
+                <!-- <th>Departure Base Price</th> -->
+                <th>Departure Calculated Price</th>
                 <th>Return Airline</th>
                 <th>Return Flight Number</th>
                 <th>Return Date and Time</th>
                 <th>Return Arrival Date and Time</th>
-                <th>Return Base Price</th>
+                <!-- <th>Return Base Price</th> -->
+                <th>Return Calculated Price</th>
             </tr>
         </thead>
         <tbody>
@@ -83,12 +91,14 @@
                     <td>{{ flight['departure_flight_number'] }}</td>
                     <td>{{ flight['departure_date_time'] }}</td>
                     <td>{{ flight['arrival_date_time'] }}</td>
-                    <td>{{ flight['departure_base_price'] }}</td>
+                    <!-- <td>{{ flight['departure_base_price'] }}</td> -->
+                    <td>{{ flight['departure_calculated_price'] }}</td>
                     <td>{{ flight['return_airline_name'] }}</td>
                     <td>{{ flight['return_flight_number'] }}</td>
                     <td>{{ flight['return_date_time'] }}</td>
                     <td>{{ flight['return_arrival_date_time'] }}</td>
-                    <td>{{ flight['return_base_price'] }}</td>
+                    <!-- <td>{{ flight['return_base_price'] }}</td> -->
+                    <td>{{ flight['return_calculated_price'] }}</td>
 
                 </tr>
             {% endfor %}
