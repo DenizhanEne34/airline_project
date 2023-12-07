@@ -2,36 +2,36 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>My Flights</title>
+    <title>My Future Flights</title>
 </head>
 <body>
-    <h1>My Flights</h1>
-    
-    {% if flights %}
-        <table border="1">
-            <thead>
+    <h1>My Future Flights</h1>
+    <table border="1">
+        <thead>
+            <tr>
+                <!-- Add the relevant column headers -->
+                <th>Flight Number</th>
+                <th>Departure Date and Time</th>
+                <th>Arrival Date and Time</th>
+                <th>Departure Airport</th>
+                <th>Arrival Airport</th>
+                <!-- Add more columns as needed -->
+            </tr>
+        </thead>
+        <tbody>
+            {% for flight in flights %}
                 <tr>
-                    <th>Flight Number</th>
-                    <th>Airline</th>
-                    <th>Departure Date and Time</th>
-                    <th>Arrival Date and Time</th>
-                    <!-- Add more columns as needed -->
+                    <!-- Replace these with the appropriate fields from your flights data -->
+                    <td>{{ flight.flight_number }}</td>
+                    <td>{{ flight.departure_date_time }}</td>
+                    <td>{{ flight.arrival_date_time }}</td>
+                    <td>{{ flight.departure_airport }}</td>
+                    <td>{{ flight.arrival_airport }}</td>
+                    <!-- Add more data as needed -->
                 </tr>
-            </thead>
-            <tbody>
-                {% for flight in flights %}
-                    <tr>
-                        <td>{{ flight.flight_number }}</td>
-                        <td>{{ flight.airline_name }}</td>
-                        <td>{{ flight.departure_date_time }}</td>
-                        <td>{{ flight.arrival_date_time }}</td>
-                        <!-- Add more details as needed -->
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% else %}
-        <p>No upcoming flights found.</p>
-    {% endif %}
+            {% endfor %}
+        </tbody>
+    </table>
+    <a href="{{ url_for('index') }}">Back to Home</a>
 </body>
 </html>
