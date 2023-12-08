@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Create New Flight</title>
+</head>
+<body>
+    <h1>Create New Flight</h1>
+
+    <!-- Display error message if any -->
+    {% if error %}
+        <p style="color: red;">{{ error }}</p>
+    {% endif %}
+
+    <!-- Display form for creating a new flight -->
+    <form action="{{ url_for('createFlight') }}" method="post">
+        <input type="hidden" name="airlineName" value="{{ session['airlineName'] }}">
+        
+        <label for="flightNumber">Flight Number:</label>
+        <input type="text" id="flightNumber" name="flightNumber" required><br>
+
+        <label for="departureDateTime">Departure Date and Time:</label>
+        <input type="datetime-local" id="departureDateTime" name="departureDateTime" required><br>
+
+        <label for="arrivalDateTime">Arrival Date and Time:</label>
+        <input type="datetime-local" id="arrivalDateTime" name="arrivalDateTime" required><br>
+
+        <label for="departureAirportCode">Departure Airport Code:</label>
+        <input type="text" id="departureAirportCode" name="departureAirportCode" required><br>
+
+        <label for="arrivalAirportCode">Arrival Airport Code:</label>
+        <input type="text" id="arrivalAirportCode" name="arrivalAirportCode" required><br>
+
+        <label for="basePrice">Base Price:</label>
+        <input type="number" step="0.01" id="basePrice" name="basePrice" required><br>
+
+        <input type="submit" value="Create Flight">
+    </form>
+
+    <hr>
+<!--
+    <h2>Future Flights (Next 30 Days)</h2>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>Flight Number</th>
+                <th>Departure Date and Time</th>
+                <th>Arrival Date and Time</th>
+                <th>Departure Airport Code</th>
+                <th>Arrival Airport Code</th>
+                <th>Base Price</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for flight in futureFlights %}
+                <tr>
+                    <td>{{ flight['flight_number'] }}</td>
+                    <td>{{ flight['departure_date_time'] }}</td>
+                    <td>{{ flight['arrival_date_time'] }}</td>
+                    <td>{{ flight['departure_airport_code'] }}</td>
+                    <td>{{ flight['arrival_airport_code'] }}</td>
+                    <td>{{ flight['base_price'] }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+-->
+</body>
+</html>

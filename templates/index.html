@@ -137,6 +137,22 @@
 
                 </tr>
             {% endfor %}
+            
+
+            {% if session['username'] %}
+            <a href="{{ url_for('logout') }}"><button>Logout</button></a>
+            {% endif %}
+
+            <!-- ... existing HTML code ... -->
+
+            {% if session['username'] %}
+            <a href="{{ url_for('trackSpending') }}"><button>Track My Spending</button></a>
+            {% endif %}
+
+
+
+            
+
         </tbody>
     </table>
     {% endif %}
