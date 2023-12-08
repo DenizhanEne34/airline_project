@@ -299,6 +299,24 @@ def checkStatus():
 	else:
 		return render_template('checkStatus.html')
 
+@app.route('/purchaseTicket', methods=['GET', 'POST'])
+def purchaseTicket():
+    flight_number = request.args.get('flight_number')
+    departure_date_time = request.args.get('departure_date_time')
+    
+    # Ensure the user is logged in
+    if 'username' not in session:
+        return redirect(url_for('login'))
+
+    if request.method == 'POST':
+        # Process the form data and purchase the ticket
+        # Extract data from the form
+        # Implement the logic to store ticket information in the database
+        pass
+    else:
+        # Display the ticket purchase form
+        return render_template('purchase_ticket.html', flight_number=flight_number, departure_date_time=departure_date_time)
+
 
 
 @app.route('/myFlights', methods=['GET'])
