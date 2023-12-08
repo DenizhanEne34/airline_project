@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>View Customer Details</title>
+</head>
+
+<body>
+    <h1>View Customer Details</h1>
+
+    <!-- Display error message if any -->
+    {% if error %}
+        <p style="color: red;">{{ error }}</p>
+    {% endif %}
+
+    <!-- Display form for viewing customer details -->
+    <form action="{{ url_for('viewFrequentCustomersForm') }}" method="post">
+        <label for="customerEmail">Customer Email:</label>
+        <input type="text" id="customerEmail" name="customerEmail" placeholder="Customer Email" required><br>
+
+        <input type="submit" value="View Details">
+    </form>
+
+    <!-- Display most frequent customer and customer's flights if available -->
+    {% if customer_details %}
+        <h2>Most Frequent Customer in the Last Year:</h2>
+        <p>Email: {{ customer_details['most_frequent_customer']['email'] }}</p>
+        <p>Total Flights: {{ customer_details['most_frequent_customer']['total_flights'] }}</p>
+
+        <h2>Customer's Flights on {{ customer_details['airline_name'] }}:</h2>
+        <table border="1">
+            <thead>
+                <tr>
+                    <th>Airline Name</th>
+                    <th>Flight Number</th>
+                    <th>Departure Date and Time</th>
+                    <th>Arrival Date and Time</th>
+                    <th>Base Price</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for flight in customer_details['flights'] %}
+                    <tr>
+                        <td>{{ flight['airline_name'] }}</td>
+                        <td>{{ flight['flight_number'] }}</td>
+                        <td>{{ flight['departure_date_time'] }}</td>
+                        <td>{{ flight['arrival_date_time'] }}</td>
+                        <td>{{ flight['base_price'] }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+</body>
+
+</html>

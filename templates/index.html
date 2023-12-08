@@ -12,17 +12,7 @@
     <a href="{{ url_for('checkStatus') }}">Check Status of a Flight</a> |
 
     
-    <body>
-       
-    
-        <!-- Button for My Flights -->
-            <br>
-            <a href="{{ url_for('myFlights') }}"><button>View My Future Flights</button></a>
-       
-    
-       
-    </body>
-    
+
     <!-- Search Form for One-way or Return flights -->
     <form action="/" method="get">
         <input type="text" name="depCity" placeholder="Departure City" required> <br>
@@ -67,12 +57,6 @@
                     <td>{{ flight['calculated_price'] }}</td>
                     <td>{{ flight['departure_airport'] }}</td>
                     <td>{{ flight['arrival_airport'] }}</td>
-                    <td>
-                        <a href="{{ url_for('purchaseTicket', flight_number=flight.flight_number, departure_date_time=flight.departure_date_time) }}">
-                            <button>Purchase Tickets</button>
-                        </a>
-                        
-                    </td>
                 </tr>
             {% endfor %}
         </tbody>
@@ -81,7 +65,6 @@
         
     {% if returnFlights %}
         <!-- to be done later -->
-    
     <h1>Search Results for Return Flights</h1>
 
     <table border="1">
@@ -116,13 +99,6 @@
                     <td>{{ flight['return_arrival_date_time'] }}</td>
                     <!-- <td>{{ flight['return_base_price'] }}</td> -->
                     <td>{{ flight['return_calculated_price'] }}</td>
-                    <td>
-                        <!-- Purchase Tickets button is always visible -->
-                        <a href="{{ url_for('purchaseTicket', flight_number=flight.flight_number, departure_date_time=flight.departure_date_time) }}">
-                            <button>Purchase Tickets</button>
-                        </a>
-                        
-                    </td>
 
                 </tr>
             {% endfor %}
