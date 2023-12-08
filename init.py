@@ -18,7 +18,7 @@ conn = pymysql.connect(host='localhost',
 
 
 @app.route('/', methods=['GET', 'POST'])
-def hello():
+def index():
 	if 'depCity' in request.args: #just to check if the form with get method is submitted or not
 		if request.args.get('action')=='oneWay': #submit buttons have names action with values to handle different buttons on the same page
 			depCity=request.args.get('depCity')
@@ -171,6 +171,7 @@ def login():
 				return render_template('login.html', error=error)
 
 	else:
+		
 		return render_template('login.html')
 
 #Define route for register
@@ -383,6 +384,75 @@ def cancelTicket():
         # Redirect with an error message if the flight is less than 24 hours ahead
         return redirect(url_for('myFlights', error='Cancellation failed. Flights within 24 hours cannot be cancelled.'))
 
+@app.route('/rateFlights', methods=['GET', 'POST'])
+def rateFlights():
+    # Ensure the user is logged in
+    if 'username' not in session:
+        return redirect(url_for('login'))
+    
+    user = session['username']
+    cursor = conn.cursor()
+
+    # Fetch past completed flights for the logged-in user
+    query = '''
+    SELECT Flight.flight_number, Flight.departure_date_time, Flight.arrival_date_time, ...
+    FROM Ticket
+    JOIN Flight ON Ticket.flight_number = Flight.flight_number AND Ticket.airline_name = Flight.airline_name
+    WHERE Ticket.customer_email = %s AND Flight.arrival_date_time < NOW()
+    '''
+    cursor.execute(query, (user,))
+    past_flights = cursor.fetchall()
+    cursor.close()
+
+    return render_template('rate_flights.html', past_flights=past_flights)
+
+@app.route('/customerProfile')
+def customerProfile():
+    if 'username' not in session:
+        return redirect(url_for('login'))
+
+    user = session['username']
+    cursor = conn.cursor()
+
+    # Fetch customer information from the database
+    query = 'SELECT * FROM Customer WHERE email = %s'
+    cursor.execute(query, (user,))
+    customer_info = cursor.fetchone()
+    cursor.close()
+
+    return render_template('customer_profile.html', customer_info=customer_info)
+
+@app.route('/submitRating', methods=['POST'])
+def submitRating():
+    # Ensure the user is logged in
+    if 'username' not in session:
+        return redirect(url_for('login'))
+
+    user = session['username']
+    flight_number = request.form['flight_number']
+    departure_date_time = request.form['departure_date_time']
+    rating = request.form['rating']
+    comment = request.form['comment']
+
+    cursor = conn.cursor()
+
+    # Insert or update the rating and comment for the flight
+    rating_query = '''
+    INSERT INTO Ratings (customer_email, flight_number, departure_date_time, rating, comment)
+    VALUES (%s, %s, %s, %s, %s)
+    ON DUPLICATE KEY UPDATE rating=%s, comment=%s
+    '''
+    cursor.execute(rating_query, (user, flight_number, departure_date_time, rating, comment, rating, comment))
+    conn.commit()
+    cursor.close()
+
+    return redirect(url_for('rateFlights', message='Your feedback has been submitted.'))
+
+@app.route('/logout')
+def logout():
+    # Clear the user session
+    session.clear()
+    return redirect(url_for('login'))
 
 ##@app.route('/customerProfile', methods=['GET', 'POST'])
 
