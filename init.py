@@ -326,19 +326,62 @@ def myFlights():
     if not user:
         return redirect(url_for('login'))
 
+    message = request.args.get('message')
+    error = request.args.get('error')
+    
     cursor = conn.cursor()
 
-    # Fetch flights booked by the logged-in user
+    # Fetch flights booked by the logged-in user that are in the future
     query = '''
-    SELECT * FROM Booking
-    JOIN Flight ON Booking.flight_id = Flight.flight_id
-    WHERE Booking.customer_email = %s AND Flight.departure_date_time > NOW()
+    SELECT Ticket.ticket_id, Flight.flight_number, Flight.departure_date_time, Flight.arrival_date_time, ...
+    FROM Ticket
+    JOIN Flight ON Ticket.flight_number = Flight.flight_number AND Ticket.airline_name = Flight.airline_name
+    WHERE Ticket.customer_email = %s AND Flight.departure_date_time > NOW()
     '''
     cursor.execute(query, (user,))
     flights = cursor.fetchall()
     cursor.close()
 
-    return render_template('my_flights.html', flights=flights)
+    # Pass the current time to the template for comparison
+    current_time = datetime.now()
+
+    return render_template('my_flights.html', flights=flights, current_time=current_time, message=message, error=error)
+
+
+@app.route('/cancelTicket', methods=['POST'])
+def cancelTicket():
+    # Ensure the user is logged in
+    if 'username' not in session:
+        return redirect(url_for('login'))
+
+    user = session['username']
+    ticket_id = request.form['ticket_id']
+
+    cursor = conn.cursor()
+
+    # Check if the flight is more than 24 hours ahead
+    check_flight_time_query = '''
+        SELECT departure_date_time FROM Flight
+        JOIN Ticket ON Ticket.flight_number = Flight.flight_number
+        WHERE Ticket.ticket_id = %s AND Flight.departure_date_time > NOW() + INTERVAL 24 HOUR
+    '''
+    cursor.execute(check_flight_time_query, (ticket_id,))
+    flight_time = cursor.fetchone()
+
+    if flight_time:
+        # Flight is more than 24 hours ahead, proceed with cancellation
+        cancel_ticket_query = '''
+            DELETE FROM Ticket WHERE ticket_id = %s AND customer_email = %s
+        '''
+        cursor.execute(cancel_ticket_query, (ticket_id, user))
+        conn.commit()
+        cursor.close()
+        # Redirect to the my flights page with a success message
+        return redirect(url_for('myFlights', message='Your ticket has been successfully cancelled.'))
+    else:
+        cursor.close()
+        # Redirect with an error message if the flight is less than 24 hours ahead
+        return redirect(url_for('myFlights', error='Cancellation failed. Flights within 24 hours cannot be cancelled.'))
 
 
 ##@app.route('/customerProfile', methods=['GET', 'POST'])

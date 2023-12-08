@@ -118,7 +118,10 @@
                     <td>{{ flight['return_calculated_price'] }}</td>
                     <td>
                         <!-- Purchase Tickets button is always visible -->
-                    <a href="{{ url_for('purchaseTicket', flight_id=flight.flight_id) }}"><button>Purchase Tickets</button></a>
+                        <a href="{{ url_for('purchaseTicket', flight_number=flight.flight_number, departure_date_time=flight.departure_date_time) }}">
+                            <button>Purchase Tickets</button>
+                        </a>
+                        
                     </td>
 
                 </tr>
