@@ -12,8 +12,26 @@
     <p>Email: {{ customer_info.email }}</p>
     <!-- Add more fields as necessary -->
 
-    <!-- Button to go back to the main page -->
-    <!-- Button to go back to the main page -->
+    <h2>Flight Management</h2>
+    <div>
+        <!-- Button to view future flights -->
+        <a href="{{ url_for('myFlights') }}"><button>View Future Flights</button></a>
+        <!-- Additional buttons for other functionalities will be added here -->
+        <!-- Button to rate and comment on past flights -->
+        <a href="{{ url_for('rateFlights') }}"><button>Rate and Comment on Past Flights</button></a>
+    </div>
+
+    <h2>Search for Flights</h2>
+    <form action="{{ url_for('searchFlightsFromProfile') }}" method="get">
+    <input type="text" name="depCity" placeholder="Departure City" required> <br>
+    <input type="text" name="arrCity" placeholder="Arrival City" required> <br>
+    Departure Date:<input type="date" name="depDate" required> <br>
+    Return Date: <input type="date" name="retDate"> <br>
+    
+    Oneway Filter: <input type="submit" name="action" value="oneWay">
+    Return Filter: <input type="submit" name="action" value="return">
+</form>
+   
 <a href="{{ url_for('index') }}"><button>Back to Main Page</button></a>
 
 </body>

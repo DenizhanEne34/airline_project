@@ -12,16 +12,6 @@
     <a href="{{ url_for('checkStatus') }}">Check Status of a Flight</a> |
 
     
-    <body>
-       
-    
-        <!-- Button for My Flights -->
-            <br>
-            <a href="{{ url_for('myFlights') }}"><button>View My Future Flights</button></a>
-       
-    
-       
-    </body>
     
     <!-- Search Form for One-way or Return flights -->
     <form action="/" method="get">
@@ -38,17 +28,6 @@
     {% if error %}
         <p style="color: red;">{{ error }}</p>
     {% endif %}
-    <!-- Add this where you list your other menu options -->
- 
-    <!-- Add this where you list your other menu options -->
-    {% if session['username'] %}
-    <a href="{{ url_for('rateFlights') }}"><button>Rate and Comment on Previous Flights</button></a>
-    {% else %}
-    <a href="{{ url_for('login') }}"><button>Rate and Comment on Previous Flights</button></a>
-    {% endif %}
-
-  
-    
 
     <!-- Displaying flights -->
     {% if onewayFlights %}

@@ -3,7 +3,7 @@ from flask import Flask, render_template, request, session, url_for, redirect
 import pymysql.cursors
 import hashlib
 from datetime import datetime, timedelta
-
+from jinja2 import Environment
 #Initialize the app from Flask
 app = Flask(__name__)
 
@@ -17,6 +17,12 @@ conn = pymysql.connect(host='localhost',
                        cursorclass=pymysql.cursors.DictCursor)
 
 
+def timedelta_days(days):
+    return timedelta(days=days)
+
+app.jinja_env.filters['timedelta_days'] = timedelta_days
+
+
 @app.route('/', methods=['GET', 'POST'])
 def index():
 	if 'depCity' in request.args: #just to check if the form with get method is submitted or not
@@ -27,6 +33,7 @@ def index():
 			depDateEnd=datetime.strptime(depDate, "%Y-%m-%d") + timedelta(days=1)
 			depDateEnd=depDateEnd.strftime("%Y-%m-%d 23:59:59")
 			cursor=conn.cursor()
+            
 			query1= '''
 			SELECT 
 			    f.airline_name, 
@@ -121,6 +128,7 @@ def index():
 			cursor.execute(query1, (depCity, depDate, depDateEnd, depCity, retDate, retDateEnd))
 			result=cursor.fetchall()
 			cursor.close()
+            
 			error=None
 			if result:
 				return render_template('index.html', returnFlights=result)
@@ -131,7 +139,7 @@ def index():
 
 	else:
 		return render_template('index.html')
-
+      
 #Define route for login
 @app.route('/login', methods=['GET', 'POST']) #only one route is enough to handle login
 def login():
@@ -173,7 +181,123 @@ def login():
 	else:
 		
 		return render_template('login.html')
+      
+@app.route('/searchFlightsFromProfile', methods=['GET'])
+def searchFlightsFromProfile():
+	if 'depCity' in request.args: #just to check if the form with get method is submitted or not
+		if request.args.get('action')=='oneWay': #submit buttons have names action with values to handle different buttons on the same page
+			depCity=request.args.get('depCity')
+			arrCity=request.args.get('arrCity')
+			depDate=request.args.get('depDate')
+			depDateEnd=datetime.strptime(depDate, "%Y-%m-%d") + timedelta(days=1)
+			depDateEnd=depDateEnd.strftime("%Y-%m-%d 23:59:59")
+			cursor=conn.cursor()
+			query1= '''
+			SELECT 
+			    f.airline_name, 
+			    f.flight_number, 
+			    f.departure_date_time, 
+			    f.arrival_date_time, 
+			    f.base_price, 
+			    CASE 
+			        WHEN COUNT(t.ticket_id) >= 0.8 * a.number_of_seats THEN f.base_price * 1.25
+			        ELSE f.base_price
+			    END AS calculated_price,
+			    dep.airport_name AS departure_airport, 
+			    arr.airport_name AS arrival_airport 
+			FROM 
+			    Flight AS f
+			JOIN 
+			    Airport AS dep ON f.departure_airport_code = dep.airport_code
+			JOIN 
+			    Airport AS arr ON f.arrival_airport_code = arr.airport_code
+			JOIN 
+			    Airplane AS a ON f.airplane_id = a.airplane_id
+			LEFT JOIN 
+			    Ticket AS t ON f.flight_number = t.flight_number AND f.airline_name = t.airline_name AND f.departure_date_time=t.departure_date_time
+			WHERE 
+			    dep.city = %s AND arr.city = %s AND f.departure_date_time >= %s AND f.departure_date_time < %s
+			GROUP BY 
+			    f.flight_number, f.airline_name, f.departure_date_time, f.arrival_date_time, f.base_price, a.number_of_seats, dep.airport_name, arr.airport_name
 
+
+			'''
+			cursor.execute(query1, (depCity, arrCity, depDate, depDateEnd))
+			result=cursor.fetchall()
+			user = session['username']
+            
+			cursor.close()
+            
+			error=None
+			if result:
+				return render_template('customer_profile.html', onewayFlights=result)
+			else:
+				error='No flights are found'
+				return render_template('customer_profile.html', error=error)
+
+		elif request.args.get('action')=='return':
+			depCity=request.args.get('depCity')
+			arrCity=request.args.get('arrCity')
+			depDate=request.args.get('depDate')
+			depDateEnd=datetime.strptime(depDate, "%Y-%m-%d") + timedelta(days=1)
+			depDateEnd=depDateEnd.strftime("%Y-%m-%d 23:59:59")
+			retDate=request.args.get('retDate')
+			retDateEnd=datetime.strptime(retDate, "%Y-%m-%d") + timedelta(days=1)
+			retDateEnd=retDateEnd.strftime("%Y-%m-%d 23:59:59")
+			cursor=conn.cursor()
+			query1= '''
+			SELECT 
+			    dep_flights.airline_name AS departure_airline_name, 
+			    dep_flights.flight_number AS departure_flight_number, 
+			    dep_flights.departure_date_time AS departure_date_time, 
+			    dep_flights.arrival_date_time AS arrival_date_time, 
+			    CASE 
+			        WHEN dep_flights.ticket_count >= 0.8 * dep_flights.number_of_seats THEN dep_flights.base_price * 1.25
+			        ELSE dep_flights.base_price
+			    END AS departure_calculated_price,
+			    ret_flights.airline_name AS return_airline_name, 
+			    ret_flights.flight_number AS return_flight_number, 
+			    ret_flights.departure_date_time AS return_date_time,
+			    ret_flights.arrival_date_time AS return_arrival_date_time,
+			    CASE 
+			        WHEN ret_flights.ticket_count >= 0.8 * ret_flights.number_of_seats THEN ret_flights.base_price * 1.25
+			        ELSE ret_flights.base_price
+			    END AS return_calculated_price
+			FROM 
+			    (SELECT f.*, a.number_of_seats, COUNT(t.ticket_id) as ticket_count FROM Flight f
+			     JOIN Airport dep ON f.departure_airport_code = dep.airport_code
+			     JOIN Airplane a ON f.airplane_id = a.airplane_id
+			     LEFT JOIN Ticket t ON f.flight_number = t.flight_number AND f.airline_name = t.airline_name AND f.departure_date_time=t.departure_date_time
+			     WHERE dep.city = %s AND f.departure_date_time >= %s AND f.departure_date_time < %s
+			     GROUP BY f.flight_number, f.airline_name, a.number_of_seats, f.base_price, f.departure_date_time, f.arrival_date_time, dep.airport_code) AS dep_flights
+			JOIN 
+			    (SELECT f.*, a.number_of_seats, COUNT(t.ticket_id) as ticket_count FROM Flight f
+			     JOIN Airport arr ON f.arrival_airport_code = arr.airport_code
+			     JOIN Airplane a ON f.airplane_id = a.airplane_id
+			     LEFT JOIN Ticket t ON f.flight_number = t.flight_number AND f.airline_name = t.airline_name AND f.departure_date_time=t.departure_date_time
+			     WHERE arr.city = %s AND f.departure_date_time >= %s AND f.departure_date_time < %s
+			     GROUP BY f.flight_number, f.airline_name, a.number_of_seats, f.base_price, f.departure_date_time, f.arrival_date_time, arr.airport_code) AS ret_flights
+			ON 
+			    dep_flights.arrival_airport_code = ret_flights.departure_airport_code
+			WHERE 
+			    dep_flights.departure_date_time < ret_flights.departure_date_time
+
+
+						'''
+
+			cursor.execute(query1, (depCity, depDate, depDateEnd, depCity, retDate, retDateEnd))
+			result=cursor.fetchall()
+			cursor.close()
+			error=None
+			if result:
+				return render_template('index.html', returnFlights=result)
+			else:
+				error='No flights are found'
+				return render_template('index.html', error=error)
+
+
+	else:
+		return render_template('index.html')
 #Define route for register
 @app.route('/registerCustomer', methods=['GET', 'POST'])
 def registerCustomer():
@@ -322,7 +446,7 @@ def purchaseTicket():
 
 @app.route('/myFlights', methods=['GET'])
 def myFlights():
-    # Ensure the user is logged in
+    
     user = session.get('username')
     if not user:
         return redirect(url_for('login'))
@@ -332,21 +456,25 @@ def myFlights():
     
     cursor = conn.cursor()
 
-    # Fetch flights booked by the logged-in user that are in the future
+
     query = '''
-    SELECT Ticket.ticket_id, Flight.flight_number, Flight.departure_date_time, Flight.arrival_date_time, ...
-    FROM Ticket
-    JOIN Flight ON Ticket.flight_number = Flight.flight_number AND Ticket.airline_name = Flight.airline_name
-    WHERE Ticket.customer_email = %s AND Flight.departure_date_time > NOW()
+    SELECT Flight.flight_number, Flight.departure_date_time, Flight.arrival_date_time, Flight.departure_airport_code, Flight.arrival_airport_code
+    FROM Flight
+    JOIN Ticket ON Ticket.flight_number = Flight.flight_number
+    WHERE Ticket.email = %s AND Flight.departure_date_time > NOW()
     '''
     cursor.execute(query, (user,))
     flights = cursor.fetchall()
+    for flight in flights:
+        flight['more_than_24hrs'] = flight['departure_date_time'] > datetime.now() + timedelta(days=1)
     cursor.close()
+
 
     # Pass the current time to the template for comparison
     current_time = datetime.now()
 
     return render_template('my_flights.html', flights=flights, current_time=current_time, message=message, error=error)
+
 
 
 @app.route('/cancelTicket', methods=['POST'])
@@ -395,13 +523,14 @@ def rateFlights():
 
     # Fetch past completed flights for the logged-in user
     query = '''
-    SELECT Flight.flight_number, Flight.departure_date_time, Flight.arrival_date_time, ...
+    SELECT Ticket.flight_number, Ticket.departure_date_time, Ticket.airline_name 
     FROM Ticket
     JOIN Flight ON Ticket.flight_number = Flight.flight_number AND Ticket.airline_name = Flight.airline_name
-    WHERE Ticket.customer_email = %s AND Flight.arrival_date_time < NOW()
+    WHERE Ticket.email = %s AND Flight.arrival_date_time < NOW()
     '''
     cursor.execute(query, (user,))
     past_flights = cursor.fetchall()
+    print(past_flights)
     cursor.close()
 
     return render_template('rate_flights.html', past_flights=past_flights)
@@ -419,34 +548,31 @@ def customerProfile():
     cursor.execute(query, (user,))
     customer_info = cursor.fetchone()
     cursor.close()
-
+    #print(customer_info)
     return render_template('customer_profile.html', customer_info=customer_info)
 
 @app.route('/submitRating', methods=['POST'])
 def submitRating():
-    # Ensure the user is logged in
-    if 'username' not in session:
-        return redirect(url_for('login'))
-
+    # ... existing code ...
     user = session['username']
+    airline_name = request.form['airline_name']
     flight_number = request.form['flight_number']
-    departure_date_time = request.form['departure_date_time']
+    departure_date_time = request.form['departure_date_time']  # Ensure this is in the correct format
     rating = request.form['rating']
     comment = request.form['comment']
-
     cursor = conn.cursor()
-
     # Insert or update the rating and comment for the flight
     rating_query = '''
-    INSERT INTO Ratings (customer_email, flight_number, departure_date_time, rating, comment)
-    VALUES (%s, %s, %s, %s, %s)
-    ON DUPLICATE KEY UPDATE rating=%s, comment=%s
+    INSERT INTO Evaluations (email, airline_name, flight_number, departure_date_time, rating, comments)
+    VALUES (%s, %s, %s, %s, %s, %s)
+    ON DUPLICATE KEY UPDATE rating=%s, comments=%s
     '''
-    cursor.execute(rating_query, (user, flight_number, departure_date_time, rating, comment, rating, comment))
+    cursor.execute(rating_query, (user, airline_name, flight_number, departure_date_time, rating, comment, rating, comment))
     conn.commit()
     cursor.close()
 
     return redirect(url_for('rateFlights', message='Your feedback has been submitted.'))
+
 
 
 
