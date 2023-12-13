@@ -9,10 +9,8 @@ app = Flask(__name__)
 
 #Configure MySQL
 conn = pymysql.connect(host='localhost',
-					   port = 8889,
-                       user='deniz',
-                       password='1289',
-                       db='project',
+                       user='root',
+                       db='project2',
                        charset='utf8mb4',
                        cursorclass=pymysql.cursors.DictCursor)
 
@@ -225,15 +223,17 @@ def searchFlightsFromProfile():
 			cursor.execute(query1, (depCity, arrCity, depDate, depDateEnd))
 			result=cursor.fetchall()
 			user = session['username']
-            
+			query123 = 'SELECT * FROM Customer WHERE email = %s'
+			cursor.execute(query123, (user))
+			customer_info = cursor.fetchone()
 			cursor.close()
             
 			error=None
-			if result:
-				return render_template('customer_profile.html', onewayFlights=result)
+			if result and customer_info:
+				return render_template('customer_profile.html', onewayFlights=result, customer_info=customer_info)
 			else:
 				error='No flights are found'
-				return render_template('customer_profile.html', error=error)
+				return render_template('customer_profile.html', error=error, customer_info=customer_info)
 
 		elif request.args.get('action')=='return':
 			depCity=request.args.get('depCity')
@@ -287,13 +287,17 @@ def searchFlightsFromProfile():
 
 			cursor.execute(query1, (depCity, depDate, depDateEnd, depCity, retDate, retDateEnd))
 			result=cursor.fetchall()
+			user = session['username']
+			query123 = 'SELECT * FROM Customer WHERE email = %s'
+			cursor.execute(query123, (user))
+			customer_info = cursor.fetchone()
 			cursor.close()
 			error=None
 			if result:
-				return render_template('index.html', returnFlights=result)
+				return render_template('index.html', returnFlights=result, customer_info=customer_info)
 			else:
 				error='No flights are found'
-				return render_template('index.html', error=error)
+				return render_template('index.html', error=error, customer_info=customer_info)
 
 
 	else:
