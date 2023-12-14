@@ -19,6 +19,7 @@
         <!-- Additional buttons for other functionalities will be added here -->
         <!-- Button to rate and comment on past flights -->
         <a href="{{ url_for('rateFlights') }}"><button>Rate and Comment on Past Flights</button></a>
+        <a href="{{ url_for('trackSpending') }}"><button>Track My Spending</button></a>
     </div>
 
     <h2>Search for Flights</h2>
@@ -120,8 +121,10 @@
                 </tr>
             {% endfor %}
     {% endif %}
-   
-<a href="{{ url_for('index') }}"><button>Back to Main Page</button></a>
+
+
+
+<a href="{{ url_for('index') }}"><button>Log out</button></a>
 
 </body>
 </html>

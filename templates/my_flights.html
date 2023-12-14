@@ -33,13 +33,13 @@
                     <td>{{ flight.departure_airport_code }}</td>
                     <td>{{ flight.arrival_airport_code }}</td>
                     <td>
-                        <!-- Only show the cancel button if the flight is more than 24 hours away -->
+                        
                         {% if flight.more_than_24hrs %}
-                            <form action="{{ url_for('cancelTicket') }}" method="post">
-                                <input type="hidden" name="ticket_id" value="{{ flight.ticket_id }}">
-                                <input type="submit" value="Cancel Trip">
-                            </form>
-                        {% endif %}
+                        <form action="{{ url_for('cancelTicket') }}" method="post">
+                        <input type="hidden" name="flight_number" value="{{ flight.flight_number }}">
+                        <input type="submit" value="Cancel Trip">
+                        </form>
+                {% endif %}
                     </td>
                 </tr>
             {% endfor %}

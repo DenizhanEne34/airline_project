@@ -4,13 +4,17 @@ import pymysql.cursors
 import hashlib
 from datetime import datetime, timedelta
 from jinja2 import Environment
+from dateutil.relativedelta import relativedelta
+from dateutil.parser import parse
 #Initialize the app from Flask
 app = Flask(__name__)
 
 #Configure MySQL
 conn = pymysql.connect(host='localhost',
-                       user='root',
-                       db='project2',
+                       user='deniz',
+                       port=8889,
+                       db='project',
+                       password='1289',
                        charset='utf8mb4',
                        cursorclass=pymysql.cursors.DictCursor)
 
@@ -428,23 +432,65 @@ def checkStatus():
 	else:
 		return render_template('checkStatus.html')
 
+
+
+
+
 @app.route('/purchaseTicket', methods=['GET', 'POST'])
 def purchaseTicket():
-    flight_number = request.args.get('flight_number')
-    departure_date_time = request.args.get('departure_date_time')
-    
-    # Ensure the user is logged in
     if 'username' not in session:
         return redirect(url_for('login'))
 
+    
+    flight_number = request.args.get('flight_number')
+    departure_date_time = request.args.get('departure_date_time')
+    
+
+
     if request.method == 'POST':
-        # Process the form data and purchase the ticket
-        # Extract data from the form
-        # Implement the logic to store ticket information in the database
-        pass
+        airline_name = request.form['airline_name']
+        departure_date_time = request.form['departure_date_time']
+        flight_number = request.form['flight_number']
+        first_name = request.form['first_name']
+        last_name = request.form['last_name']
+        date_of_birth = request.form['date_of_birth']
+        calculated_price = request.form['calculated_price']
+        card_type = request.form['card_type']
+        card_number = request.form['card_number']
+        name_on_card = request.form['name_on_card']
+        expiration_date = request.form['expiration_date']
+        email = request.form['email']
+        cursor = conn.cursor()
+
+        ticket_id = "TICKET_" + datetime.now().strftime("%Y%m%d%H%M%S")
+
+        
+        insert_query = '''
+        INSERT INTO Ticket (
+            ticket_id, first_name, last_name, date_of_birth, calculated_price, 
+            purchase_date_time, card_type, card_number, name_on_card, 
+            expiration_date, airline_name, flight_number, departure_date_time, email
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,%s, %s, %s)
+        '''
+        cursor.execute(insert_query, (
+            ticket_id, first_name, last_name, date_of_birth, calculated_price, 
+            datetime.now(), card_type, card_number, name_on_card, 
+            expiration_date, airline_name, flight_number, departure_date_time, email
+        ))
+        conn.commit()
+        user = session['username']
+        query123 = 'SELECT * FROM Customer WHERE email = %s'
+        cursor.execute(query123,(user))
+        customer_info = cursor.fetchone()
+        cursor.close()
+        
+        
+        return render_template('customer_profile.html', customer_info=customer_info)
+
     else:
-        # Display the ticket purchase form
-        return render_template('purchase_ticket.html', flight_number=flight_number, departure_date_time=departure_date_time)
+        
+        return render_template('purchase_ticket.html',flight_number=flight_number, departure_date_time=departure_date_time)
+
 
 
 
@@ -488,33 +534,36 @@ def cancelTicket():
         return redirect(url_for('login'))
 
     user = session['username']
-    ticket_id = request.form['ticket_id']
-
+    flight_number = request.form['flight_number']
+    
     cursor = conn.cursor()
 
-    # Check if the flight is more than 24 hours ahead
-    check_flight_time_query = '''
-        SELECT departure_date_time FROM Flight
-        JOIN Ticket ON Ticket.flight_number = Flight.flight_number
-        WHERE Ticket.ticket_id = %s AND Flight.departure_date_time > NOW() + INTERVAL 24 HOUR
+    # Find the ticket ID based on flight_number and user email
+    find_ticket_query = '''
+    SELECT ticket_id, departure_date_time FROM Ticket
+    WHERE flight_number = %s AND email = %s
     '''
-    cursor.execute(check_flight_time_query, (ticket_id,))
-    flight_time = cursor.fetchone()
+    cursor.execute(find_ticket_query, (flight_number, user))
+    ticket_info = cursor.fetchone()
 
-    if flight_time:
+    if ticket_info and ticket_info['departure_date_time'] > datetime.now() + timedelta(hours=24):
         # Flight is more than 24 hours ahead, proceed with cancellation
         cancel_ticket_query = '''
-            DELETE FROM Ticket WHERE ticket_id = %s AND customer_email = %s
+            DELETE FROM Ticket WHERE ticket_id = %s
         '''
-        cursor.execute(cancel_ticket_query, (ticket_id, user))
+        cursor.execute(cancel_ticket_query, (ticket_info['ticket_id'],))
         conn.commit()
-        cursor.close()
-        # Redirect to the my flights page with a success message
-        return redirect(url_for('myFlights', message='Your ticket has been successfully cancelled.'))
+        message = 'Your ticket has been successfully cancelled.'
     else:
-        cursor.close()
-        # Redirect with an error message if the flight is less than 24 hours ahead
-        return redirect(url_for('myFlights', error='Cancellation failed. Flights within 24 hours cannot be cancelled.'))
+        # Flight is less than 24 hours away, cancellation not allowed
+        message = 'Cancellation failed. Flights within 24 hours cannot be cancelled.'
+
+    cursor.close()
+
+    return redirect(url_for('myFlights', message=message))
+
+
+
 
 @app.route('/rateFlights', methods=['GET', 'POST'])
 def rateFlights():
@@ -579,8 +628,19 @@ def submitRating():
 
 
 
+def get_month_name(month_back):
+    current_month = datetime.now().month
+    year = datetime.now().year
+    month = current_month - month_back
+    if month <= 0:
+        month += 12
+        year -= 1
+    return datetime(year, month, 1).strftime("%B %Y")
 
-@app.route('/trackSpending', methods=['GET', 'POST'])
+
+
+
+@app.route('/trackSpending', methods=['GET'])
 def trackSpending():
     if 'username' not in session:
         return redirect(url_for('login'))
@@ -588,28 +648,109 @@ def trackSpending():
     user = session['username']
     cursor = conn.cursor()
 
-    # If the user has submitted a custom date range
-    if request.method == 'POST':
-        start_date = request.form['start_date']
-        end_date = request.form['end_date']
-    else:
-        # Default to the past year
-        end_date = datetime.now().strftime('%Y-%m-%d')
-        start_date = (datetime.now() - timedelta(days=365)).strftime('%Y-%m-%d')
-
-    # Query to calculate spending
-    spending_query = '''
-    SELECT SUM(price) as total_spending, MONTH(purchase_date) as month, YEAR(purchase_date) as year
+    # Initialize total_spent_year to 0 or fetch its value before the conditional
+    query_year = '''
+    SELECT SUM(calculated_price) AS total_spent
     FROM Ticket
-    WHERE customer_email = %s AND purchase_date BETWEEN %s AND %s
-    GROUP BY YEAR(purchase_date), MONTH(purchase_date)
-    ORDER BY YEAR(purchase_date), MONTH(purchase_date)
+    WHERE email = %s AND purchase_date_time BETWEEN DATE_SUB(NOW(), INTERVAL 1 YEAR) AND NOW()
     '''
-    cursor.execute(spending_query, (user, start_date, end_date))
-    spending_data = cursor.fetchall()
-    cursor.close()
+    cursor.execute(query_year, (user,))
+    total_spent_year = cursor.fetchone()['total_spent'] or 0
 
-    return render_template('track_spending.html', spending_data=spending_data, start_date=start_date, end_date=end_date)
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    custom_spending = None
+    monthly_spending_with_dates = []
+    if start_date and end_date:
+        # Parse the dates
+        start_date_obj = parse(start_date)
+        end_date_obj = parse(end_date)
+
+        # Calculate the number of months in the range
+        delta = relativedelta(end_date_obj, start_date_obj)
+        months_range = delta.years * 12 + delta.months
+
+        # If the range ends in the middle of the month, include the month as well
+        if delta.days > 0:
+            months_range += 1
+
+        monthly_spending = []  # This will hold the monthly totals
+
+        for i in range(months_range):
+            month_start = (start_date_obj + relativedelta(months=i)).strftime('%Y-%m-%d')
+            month_end = (start_date_obj + relativedelta(months=i+1)).strftime('%Y-%m-%d')
+
+            query_month = '''
+            SELECT SUM(calculated_price) AS total_spent
+            FROM Ticket
+            WHERE email = %s AND 
+            purchase_date_time >= %s AND 
+            purchase_date_time < %s
+            '''
+            cursor.execute(query_month, (user, month_start, month_end))
+            month_total = cursor.fetchone()['total_spent'] or 0
+            monthly_spending.append(month_total)
+
+        # Use list comprehension to format the data for rendering
+        monthly_spending_with_dates = [
+            {"month": (start_date_obj + relativedelta(months=i)).strftime('%B %Y'), "total": total}
+            for i, total in enumerate(monthly_spending)
+        ]
+
+        #     # Append to the list with formatted month name
+        #     month_name = datetime.strptime(month_start, '%Y-%m-%d').strftime('%B %Y')
+        #     #print("{} {}".format(month_name,month_total))
+        # monthly_spending_with_dates = [
+        # {"month": get_month_name(i-1), "total": total}
+        # for i, total in enumerate(monthly_spending, 1)
+        #  ]
+
+        
+    else:
+        # Default view: spending in the past year and monthly for the last six months
+        # Query for spending in the past year
+        query_year = '''
+        SELECT SUM(calculated_price) AS total_spent
+        FROM Ticket
+        WHERE email = %s AND purchase_date_time BETWEEN DATE_SUB(NOW(), INTERVAL 1 YEAR) AND NOW()
+        '''
+        cursor.execute(query_year, (user,))
+        total_spent_year = cursor.fetchone()['total_spent'] or 0
+
+        # Query for monthly spending in the last six months
+        monthly_spending = []
+        for i in range(1, 7):
+            query_month = '''
+            SELECT SUM(calculated_price) AS total_spent
+            FROM Ticket
+            WHERE email = %s AND 
+            purchase_date_time >= DATE_SUB(NOW(), INTERVAL %s MONTH) AND 
+            purchase_date_time < DATE_SUB(NOW(), INTERVAL %s MONTH)
+            '''
+            cursor.execute(query_month, (user, i, i-1))
+            month_total = cursor.fetchone()['total_spent'] or 0
+            monthly_spending.append(month_total)
+
+        
+        monthly_spending_with_dates = [
+        {"month": get_month_name(i-1), "total": total}
+        for i, total in enumerate(monthly_spending, 1)
+        
+        ]
+        
+    cursor.close()
+    
+
+    return render_template(
+    'track_spending.html',   
+    total_spent_year=total_spent_year,  # Add this line
+    monthly_spending_with_dates=monthly_spending_with_dates, 
+    custom_spending=custom_spending,
+    start_date=start_date,
+    end_date=end_date
+    )
+
+
 
 
 # @app.route('/customerProfile', methods=['GET', 'POST'])
