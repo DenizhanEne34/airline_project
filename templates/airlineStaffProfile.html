@@ -10,6 +10,8 @@
     <h1>Welcome to the Airline Reservation System</h1>
     <!-- Create New Flights -->
     <nav>
+        <a href="{{ url_for('viewFlightsForm') }}">View Flights</a> |
+        <a href="{{ url_for('viewCustomersForFlight') }}">View Customers on Flight</a> |
         <a href="{{ url_for('createFlight') }}">Create Flight</a> |
         <a href="{{ url_for('changeFlightStatus') }}">Change Flight Status</a> |
         <a href="{{ url_for('addAirplaneForm') }}">Add Airplane</a> |

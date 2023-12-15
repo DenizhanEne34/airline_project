@@ -36,16 +36,17 @@
         </tr>
     </thead>
     <tbody>
-        {% for review in flight_rating['reviews'] %}
+        {% for rating in flight_rating['ratings'] %}
             <tr>
-                <td>{{ review['email'] }}</td>
-                <td>{{ review['rating'] }}</td>
-                <td>{{ review['comments'] }}</td>
+                <td>{{ rating['email'] }}</td>
+                <td>{{ rating['rating'] }}</td>
+                <td>{{ rating['comments'] }}</td>
             </tr>
         {% endfor %}
     </tbody>
 </table>
 {% endif %}
+<a href="{{ url_for('airlineStaffProfile') }}">Return to your staff profile</a>
 
 </body>
 

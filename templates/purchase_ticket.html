@@ -5,6 +5,7 @@
     <title>Purchase Ticket</title>
 </head>
 <body>
+
     <h1>Purchase Ticket for Flight Number: {{ flight_number }} on {{ departure_date_time }}</h1>
     <form action="{{ url_for('purchaseTicket') }}" method="post">
         <label for="flight_number">Flight Number:</label><br>
@@ -13,7 +14,7 @@
         <label for="departure_date_time">Departure Date and Time:</label><br>
         <input type="text" id="departure_date_time" name="departure_date_time" value="{{ departure_date_time }}" required readonly><br>
         <label for="airline_name">Airline Name:</label><br>
-        <input type="text" id="airline_name" name="airline_name" placeholder="Airline Name" required><br>
+        <input type="text" id="airline_name" name="airline_name" placeholder="Airline Name" value="{{ airline_name }}" required readonly><br>
      <!-- User details -->
      <label for="first_name">First Name:</label><br>
      <input type="text" id="first_name" name="first_name" placeholder="First Name" required><br>
@@ -25,7 +26,7 @@
      <input type="date" id="date_of_birth" name="date_of_birth" required><br>
      
      <label for="calculated_price">Price:</label><br>
-     <input type="number" id="calculated_price" name="calculated_price" placeholder="Price" required><br>
+     <input type="number" id="calculated_price" name="calculated_price" placeholder="Price" value="{{ calculated_price }}" required readonly><br>
      
      <!-- Payment details -->
      <label for="card_type">Card Type:</label><br>
@@ -41,7 +42,7 @@
      <input type="date" id="expiration_date" name="expiration_date" required><br>
      
      <label for="email">Email:</label><br>
-     <input type="email" id="email" name="email" placeholder="Email" required><br>
+     <input type="email" id="email" name="email" placeholder="Email" value="{{ email }}" required readonly><br>
 
      <input type="submit" value="Purchase Ticket">
     </form>

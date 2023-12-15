@@ -5,6 +5,9 @@
     <title>Customer Profile</title>
 </head>
 <body>
+    {% if error %}
+    {{error}}
+    {% endif %}
     <h1>Customer Profile</h1>
 
     <!-- Display customer information -->
@@ -62,7 +65,8 @@
                     <td>{{ flight['departure_airport'] }}</td>
                     <td>{{ flight['arrival_airport'] }}</td>
                     <td>
-                        <a href="{{ url_for('purchaseTicket', flight_number=flight.flight_number, departure_date_time=flight.departure_date_time) }}">
+                        <a href="{{ url_for('purchaseTicket', flight_number=flight.flight_number, departure_date_time=flight.departure_date_time, calculated_price=flight.calculated_price,
+                        airline_name=flight.airline_name) }}">
                             <button>Purchase Tickets</button>
                         </a>
                         
